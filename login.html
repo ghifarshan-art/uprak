@@ -1,152 +1,220 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk - Kedai Mamayu</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .card-login {
-            width: 100%;
-            max-width: 400px;
-            margin: 15px;
-            transition: all 0.3s ease;
-        }
-        /* Animasi transisi smooth saat ganti form */
-        .fade-in {
-            animation: fadeIn 0.4s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-</head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+// =========================================================================
+// 1. FUNGSI OTOMATIS MEMASTIKAN MENU DEFAULT HANYA BERJALAN 1x DI AWAL
+// =========================================================================
+function initDefaultMenus() {
+    let isInitialized = localStorage.getItem('menus_initialized');
+    let menus = JSON.parse(localStorage.getItem('menus')) || [];
+    
+    if (!isInitialized && menus.length === 0) {
+        let defaultMenus = [
+            { id: 1001, name: "Seblak Original", price: 12000, category: "Makanan", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400" },
+            { id: 1002, name: "Seblak Spesial", price: 17000, category: "Makanan", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400" },
+            { id: 1003, name: "Es Teh Manis", price: 5000, category: "Minuman", img: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400" },
+            { id: 1004, name: "Es Jeruk", price: 7000, category: "Minuman", img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400" }
+        ];
 
-    <div id="playerLoginFormContainer" class="card border-0 shadow p-4 rounded-4 bg-white card-login fade-in">
-        <div class="text-center mb-4">
-            <img src="assets/img/Logo.jpg" alt="Logo Kedai Mamayu" class="shadow-sm mb-3" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #dc3545;">
-            <h4 class="fw-bold text-dark m-0">Login Pelanggan</h4>
-            <p class="text-muted small">Silakan masuk untuk menyelesaikan pesanan Anda</p>
-        </div>
+        localStorage.setItem('menus', JSON.stringify(defaultMenus));
+        localStorage.setItem('menus_initialized', 'true');
+    }
+}
 
-        <form onsubmit="handleCustomerLogin(event)">
-            <div class="mb-3">
-                <label for="customerUser" class="form-label small fw-bold">Nama Lengkap</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="fas fa-user text-muted small"></i></span>
-                    <input type="text" id="customerUser" class="form-control bg-light border-start-0 rounded-end-pill placeholder-sm" placeholder="Masukkan nama anda" required autocomplete="off">
+initDefaultMenus();
+
+// Ambil riwayat keranjang belanja yang tersimpan agar tidak terhapus saat berpindah halaman
+let cart = JSON.parse(localStorage.getItem('savedCart')) || [];
+
+// =========================================================================
+// 2. FUNGSI MENAMPILKAN MENU KE ETALASE (MAKANAN & MINUMAN)
+// =========================================================================
+function displayMenus() {
+    let menus = JSON.parse(localStorage.getItem('menus')) || [];
+    let containerMakanan = document.getElementById('container-makanan');
+    let containerMinuman = document.getElementById('container-minuman');
+
+    if (containerMakanan) containerMakanan.innerHTML = '';
+    if (containerMinuman) containerMinuman.innerHTML = '';
+
+    menus.forEach(menu => {
+        let menuHTML = `
+            <div class="col-6 col-md-4 mb-3">
+                <div class="card card-menu h-100 bg-white border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                    <img src="${menu.img}" class="card-img-top" alt="${menu.name}" style="height: 120px; object-fit: cover;">
+                    <div class="card-body p-2 d-flex flex-column justify-content-between">
+                        <div>
+                            <h6 class="card-title fw-bold mb-1 text-truncate" style="font-size: 0.9rem;">${menu.name}</h6>
+                            <p class="card-text text-success fw-bold mb-2 small">Rp ${menu.price.toLocaleString('id-ID')}</p>
+                        </div>
+                        <button class="btn btn-outline-danger w-100 rounded-pill btn-sm py-1.5" style="font-size: 0.7rem; letter-spacing: -0.3px;" onclick="addToCart(${menu.id})">
+                            <i class="fas fa-shopping-basket me-1"></i> + Keranjang
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </div>`;
 
-            <div class="mb-3">
-                <label for="customerPass" class="form-label small fw-bold">Password Pelanggan</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="fas fa-key text-muted small"></i></span>
-                    <input type="password" id="customerPass" class="form-control bg-light border-start-0 rounded-end-pill placeholder-sm" placeholder="Masukkan password (pelanggan123)" required>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn btn-danger w-100 py-2 rounded-pill fw-bold shadow-sm mb-3">
-                Konfirmasi Login & Order 🌶️
-            </button>
-
-            <hr class="text-muted opacity-25">
-
-            <button type="button" class="btn btn-outline-secondary w-100 py-2 rounded-pill small fw-bold btn-sm" onclick="switchForm('admin')">
-                <i class="fas fa-user-shield me-2"></i>Login Sebagai Admin / Kasir
-            </button>
-        </form>
-    </div>
-
-
-    <div id="adminLoginFormContainer" class="card border-0 shadow p-4 rounded-4 bg-dark text-white card-login fade-in d-none">
-        <div class="text-center mb-4">
-            <img src="assets/img/Logo.jpg" alt="Logo Kedai Mamayu" class="shadow-sm mb-3" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd; background: white; padding: 2px;">
-            <h4 class="fw-bold text-white m-0">Login Admin</h4>
-            <p class="text-white-50 small">Sistem autentikasi enkripsi kasir</p>
-        </div>
-
-        <form onsubmit="handleAdminLogin(event)">
-            <div class="mb-3">
-                <label for="adminUser" class="form-label small fw-bold text-white-50">Username Admin</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-secondary border-0 text-white rounded-start-pill"><i class="fas fa-lock text-white-50 small"></i></span>
-                    <input type="text" id="adminUser" class="form-control bg-secondary border-0 text-white rounded-end-pill placeholder-sm" placeholder="Username kasir" required autocomplete="off">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="adminPass" class="form-label small fw-bold text-white-50">Password PIN</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-secondary border-0 text-white rounded-start-pill"><i class="fas fa-key text-white-50 small"></i></span>
-                    <input type="password" id="adminPass" class="form-control bg-secondary border-0 text-white rounded-end-pill placeholder-sm" placeholder="••••••••" required>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm mb-3">
-             Masuk <i class="fas fa-sign-in-alt ms-1"></i>
-            </button>
-
-            <hr class="text-white-50 opacity-25">
-
-            <button type="button" class="btn btn-outline-light w-100 py-2 rounded-pill small fw-bold btn-sm" onclick="switchForm('customer')">
-                <i class="fas fa-arrow-left me-2"></i>Kembali ke Menu Pelanggan
-            </button>
-        </form>
-    </div>
-
-    <script>
-        // Fungsi untuk menukar tampilan form (Pelanggan <-> Admin)
-        function switchForm(target) {
-            let customerForm = document.getElementById('playerLoginFormContainer');
-            let adminForm = document.getElementById('adminLoginFormContainer');
-
-            if (target === 'admin') {
-                customerForm.classList.add('d-none');
-                adminForm.classList.remove('d-none');
-            } else {
-                adminForm.classList.add('d-none');
-                customerForm.classList.remove('d-none');
-            }
+        if (menu.category === 'Makanan' && containerMakanan) {
+            containerMakanan.innerHTML += menuHTML;
+        } else if (menu.category === 'Minuman' && containerMinuman) {
+            containerMinuman.innerHTML += menuHTML;
         }
+    });
+}
 
-        // Jalur Logika Login 1: Pelanggan (Username + Password)
-        function handleCustomerLogin(e) {
-            e.preventDefault();
-            let customerInput = document.getElementById('customerUser').value.trim();
-            let customerPass = document.getElementById('customerPass').value;
-            
-            if(!customerInput) return;
+// =========================================================================
+// 3. FUNGSI MANAJEMEN KERANJANG BELANJA (TAMBAH, UPDATE, & HAPUS)
+// =========================================================================
+function addToCart(id) {
+    let menus = JSON.parse(localStorage.getItem('menus')) || [];
+    let menu = menus.find(m => m.id === id);
+    if (!menu) return;
 
-            // Atur password validasi pelanggan di sini: "pelanggan123"
-            if (customerPass === 'pelanggan123') {
-                localStorage.setItem('currentUser', customerInput);
-                
-                // Set pemicu agar setibanya di index.html sistem langsung otomatis memesan belanjaan
-                localStorage.setItem('triggerCheckout', 'true');
-                window.location.href = 'index.html';
-            } else {
-                alert('Password Pelanggan Salah! (Gunakan password bawaan: pelanggan123)');
-            }
+    let cartItem = cart.find(item => item.id === id);
+    if (cartItem) {
+        cartItem.quantity++;
+    } else {
+        cart.push({ ...menu, quantity: 1 });
+    }
+    updateCartUI();
+}
+
+function updateCartUI() {
+    let listDesktop = document.getElementById('cart-items-list-desktop');
+    let countDesktop = document.getElementById('cart-count-desktop');
+    let totalDesktop = document.getElementById('cart-total-desktop');
+
+    let listMobile = document.getElementById('cart-items-list-mobile');
+    let countMobile = document.getElementById('cart-count-mobile');
+    let totalMobile = document.getElementById('cart-total-mobile');
+
+    // Selalu amankan isi variabel cart ke localStorage setiap kali ada perubahan
+    localStorage.setItem('savedCart', JSON.stringify(cart));
+
+    if (cart.length === 0) {
+        let emptyHTML = `<p class="text-muted text-center py-4 small">Keranjangmu masih kosong.</p>`;
+        
+        if (listDesktop) listDesktop.innerHTML = emptyHTML;
+        if (listMobile) listMobile.innerHTML = emptyHTML;
+        
+        if (countDesktop) countDesktop.innerText = '0';
+        if (countMobile) countMobile.innerText = '0';
+        
+        if (totalDesktop) totalDesktop.innerText = 'Rp 0';
+        if (totalMobile) totalMobile.innerText = 'Rp 0';
+        return;
+    }
+
+    let itemsHTML = '';
+    let total = 0;
+    let totalItems = 0;
+
+    cart.forEach((item, index) => {
+        total += item.price * item.quantity;
+        totalItems += item.quantity;
+
+        itemsHTML += `
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                <div>
+                    <h6 class="mb-0 fw-bold small text-truncate" style="max-width: 140px;">${item.name}</h6>
+                    <small class="text-muted">${item.quantity} x Rp ${item.price.toLocaleString('id-ID')}</small>
+                </div>
+                <button class="btn btn-sm text-danger border-0 p-1" onclick="removeFromCart(${index})">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </div>`;
+    });
+
+    if (listDesktop) listDesktop.innerHTML = itemsHTML;
+    if (countDesktop) countDesktop.innerText = totalItems;
+    if (totalDesktop) totalDesktop.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+
+    if (listMobile) listMobile.innerHTML = itemsHTML;
+    if (countMobile) countMobile.innerText = totalItems;
+    if (totalMobile) totalMobile.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartUI();
+}
+
+// =========================================================================
+// 4. FUNGSI PROSES CHECKOUT PESANAN KE PANEL ADMIN KASIR
+// =========================================================================
+function checkoutOrder() {
+    if (cart.length === 0) {
+        alert('Tidak ada produk untuk dipesan. Silakan pilih menu terlebih dahulu!');
+        return;
+    }
+
+    let currentUser = localStorage.getItem('currentUser');
+
+    // JIKA USER BELUM LOGIN: Amankan keranjang, beri peringatan, lalu lempar ke login.html
+    if (!currentUser || currentUser === 'Admin Kasir') {
+        alert('Anda harus login terlebih dahulu sebelum memproses pesanan!');
+        localStorage.setItem('savedCart', JSON.stringify(cart)); // Kunci data belanjaan sebelum pindah halaman
+        window.location.href = 'login.html';
+        return;
+    }
+
+    let orders = JSON.parse(localStorage.getItem('orders')) || [];
+    let itemsSummary = cart.map(item => `${item.name} (${item.quantity}x)`).join(', ');
+    let totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    let newOrder = {
+        id: 'MMY' + Math.floor(1000 + Math.random() * 9000),
+        customer: currentUser,
+        items: itemsSummary,
+        totalPrice: totalPrice,
+        status: 'Diproses'
+    };
+
+    orders.push(newOrder);
+    localStorage.setItem('orders', JSON.stringify(orders));
+
+    alert(`Pesanan berhasil dikirim dengan ID Nota: #${newOrder.id}\nSilakan tunggu hidangan Anda disiapkan!`);
+    
+    let offcanvasElement = document.getElementById('cartOffcanvasMobile');
+    if (offcanvasElement) {
+        let bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+        if (bsOffcanvas) bsOffcanvas.hide();
+    }
+
+    // Bersihkan keranjang setelah sukses order
+    cart = [];
+    localStorage.removeItem('savedCart');
+    updateCartUI();
+}
+
+// Fungsi melakukan logout pelanggan
+function logoutCustomer() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('savedCart');
+    window.location.reload();
+}
+
+// =========================================================================
+// 5. EVENT HANDLER DIMUAT SAAT HALAMAN SELESAI DIAKSES
+// =========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    let currentUser = localStorage.getItem('currentUser');
+    let userEl = document.getElementById('display-user');
+    let btnLogout = document.getElementById('btn-logout');
+    
+    // Tampilkan data UI keranjang bawaan lama jika tersimpan
+    updateCartUI();
+
+    if (currentUser && currentUser !== 'Admin Kasir') {
+        if (userEl) userEl.innerHTML = `Hallo <span class="fw-bold text-danger">${currentUser}</span>, Selamat datang`;
+        if (btnLogout) btnLogout.classList.remove('d-none');
+        
+        // JIKA mendeteksi instruksi kirim otomatis pasca pindah dari login.html
+        if (localStorage.getItem('triggerCheckout') === 'true') {
+            localStorage.removeItem('triggerCheckout'); // Hapus tanda eksekusi
+            checkoutOrder(); // Jalankan checkout otomatis
         }
-
-        // Jalur Logika Login 2: Khusus Admin Kasir
-        function handleAdminLogin(e) {
-            e.preventDefault();
-            let userAdmin = document.getElementById('adminUser').value.trim();
-            let passAdmin = document.getElementById('adminPass').value;
-
-            if (userAdmin === 'admin' && passAdmin === 'admin') {
-                localStorage.setItem('currentUser', 'Admin Kasir');
-                window.location.href = 'admin.html';
-            } else {
-                alert('Akses Ditolak! Kombinasi Username & Password Admin salah.');
-            }
-        }
-    </script>
-</body>
-</html>
+    } else {
+        if (userEl) userEl.innerText = 'Selamat Datang di Kedai Mamayu';
+        if (btnLogout) btnLogout.classList.add('d-none');
+    }
+    
+    displayMenus();
+});
