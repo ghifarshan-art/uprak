@@ -29,24 +29,32 @@
     <div id="playerLoginFormContainer" class="card border-0 shadow p-4 rounded-4 bg-white card-login fade-in">
         <div class="text-center mb-4">
             <img src="assets/img/Logo.jpg" alt="Logo Kedai Mamayu" class="shadow-sm mb-3" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #dc3545;">
-            <h4 class="fw-bold text-dark m-0">Selamat Datang</h4>
-            <p class="text-muted small">Silakan masuk untuk mulai memesan kuliner</p>
+            <h4 class="fw-bold text-dark m-0">Login Pelanggan</h4>
+            <p class="text-muted small">Silakan masuk untuk menyelesaikan pesanan Anda</p>
         </div>
 
         <form onsubmit="handleCustomerLogin(event)">
             <div class="mb-3">
-                <label for="customerUser" class="form-label small fw-bold">Username atau Email</label>
+                <label for="customerUser" class="form-label small fw-bold">Nama Lengkap</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="fas fa-user text-muted small"></i></span>
-                    <input type="text" id="customerUser" class="form-control bg-light border-start-0 rounded-end-pill placeholder-sm" placeholder="Masukkan username / email anda" required autocomplete="off">
+                    <input type="text" id="customerUser" class="form-control bg-light border-start-0 rounded-end-pill placeholder-sm" placeholder="Masukkan nama anda" required autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="customerPass" class="form-label small fw-bold">Password Pelanggan</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="fas fa-key text-muted small"></i></span>
+                    <input type="password" id="customerPass" class="form-control bg-light border-start-0 rounded-end-pill placeholder-sm" placeholder="Masukkan password (pelanggan123)" required>
                 </div>
             </div>
             
             <button type="submit" class="btn btn-danger w-100 py-2 rounded-pill fw-bold shadow-sm mb-3">
-                Masuk & Lihat Menu 🌶️
+                Konfirmasi Login & Order 🌶️
             </button>
 
-            <hr class="text-muted opacity-25My">
+            <hr class="text-muted opacity-25">
 
             <button type="button" class="btn btn-outline-secondary w-100 py-2 rounded-pill small fw-bold btn-sm" onclick="switchForm('admin')">
                 <i class="fas fa-user-shield me-2"></i>Login Sebagai Admin / Kasir
@@ -106,28 +114,32 @@
             }
         }
 
-        // Jalur Logika Login 1: Pelanggan (Username / Email)
+        // Jalur Logika Login 1: Pelanggan (Username + Password)
         function handleCustomerLogin(e) {
             e.preventDefault();
             let customerInput = document.getElementById('customerUser').value.trim();
+            let customerPass = document.getElementById('customerPass').value;
             
             if(!customerInput) return;
 
-            // Simpan nama pelanggan/email ke localStorage agar bisa dipanggil di index.html
-            localStorage.setItem('currentUser', customerInput);
-            
-            // Langsung arahkan ke lembar menu makanan utama
-            window.location.href = 'index.html';
+            // Atur password validasi pelanggan di sini: "pelanggan123"
+            if (customerPass === 'pelanggan123') {
+                localStorage.setItem('currentUser', customerInput);
+                
+                // Set pemicu agar setibanya di index.html sistem langsung otomatis memesan belanjaan
+                localStorage.setItem('triggerCheckout', 'true');
+                window.location.href = 'index.html';
+            } else {
+                alert('Password Pelanggan Salah! (Gunakan password bawaan: pelanggan123)');
+            }
         }
 
-        // Jalur Logika Login 2: Khusus Admin Kasir (Memakai Password Proteksi)
+        // Jalur Logika Login 2: Khusus Admin Kasir
         function handleAdminLogin(e) {
             e.preventDefault();
             let userAdmin = document.getElementById('adminUser').value.trim();
             let passAdmin = document.getElementById('adminPass').value;
 
-            // Kredensial Pengaman Masuk Admin (Silakan diubah sesuai keinginan kamu)
-            // Default Username: admin | Password: admin
             if (userAdmin === 'admin' && passAdmin === 'admin') {
                 localStorage.setItem('currentUser', 'Admin Kasir');
                 window.location.href = 'admin.html';
