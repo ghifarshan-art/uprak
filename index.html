@@ -55,12 +55,10 @@
                 </button>
 
                 <span class="text-dark fw-medium small d-none d-sm-inline">
-                    <span id="display-user" class="fw-bold text-danger">Selamat Datang di Kedai Mamayu</span>
+                    Hallo <span id="display-user" class="fw-bold text-danger">User</span>, Selamat datang
                 </span>
                 
-                <button id="btn-logout" class="btn btn-outline-danger btn-sm rounded-pill px-3 d-none" onclick="logoutCustomer()">
-                    <i class="fas fa-sign-out-alt"></i> Keluar
-                </button>
+                <a href="login.html" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="fas fa-sign-out-alt"></i></a>
             </div>
         </div>
     </nav>
@@ -105,7 +103,7 @@
                         <span class="text-success" id="cart-total-desktop">Rp 0</span>
                     </div>
                     
-                    <button class="btn btn-danger w-100 py-2 text-white rounded-pill fw-bold" onclick="checkoutOrder()">
+                    <button class="btn btn-primary-custom w-100 py-2 text-white rounded-pill fw-bold" onclick="checkoutOrder()">
                         <i class="fas fa-paper-plane me-2"></i>Order
                     </button>
                 </div>
