@@ -2,11 +2,9 @@
 // 1. FUNGSI OTOMATIS MEMASTIKAN MENU DEFAULT HANYA BERJALAN 1x DI AWAL
 // =========================================================================
 function initDefaultMenus() {
-    // Memeriksa penanda apakah toko sudah pernah diisi menu bawaan sebelumnya
     let isInitialized = localStorage.getItem('menus_initialized');
     let menus = JSON.parse(localStorage.getItem('menus')) || [];
     
-    // Jika belum pernah diinisialisasi DAN data di LocalStorage kosong melompong
     if (!isInitialized && menus.length === 0) {
         let defaultMenus = [
             { id: 1001, name: "Seblak Original", price: 12000, category: "Makanan", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400" },
@@ -15,19 +13,15 @@ function initDefaultMenus() {
             { id: 1004, name: "Es Jeruk", price: 7000, category: "Minuman", img: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400" }
         ];
 
-        // Masukkan menu default ke LocalStorage
         localStorage.setItem('menus', JSON.stringify(defaultMenus));
-        
-        // Kunci status agar fungsi ini tidak akan pernah menulis ulang menu lagi saat di-refresh
         localStorage.setItem('menus_initialized', 'true');
     }
 }
 
-// Jalankan sistem inisialisasi menu di atas
 initDefaultMenus();
 
-// Deklarasi array keranjang belanja global
-let cart = [];
+// Ambil riwayat keranjang belanja yang tersimpan agar tidak terhapus saat berpindah halaman
+let cart = JSON.parse(localStorage.getItem('savedCart')) || [];
 
 // =========================================================================
 // 2. FUNGSI MENAMPILKAN MENU KE ETALASE (MAKANAN & MINUMAN)
@@ -50,8 +44,8 @@ function displayMenus() {
                             <h6 class="card-title fw-bold mb-1 text-truncate" style="font-size: 0.9rem;">${menu.name}</h6>
                             <p class="card-text text-success fw-bold mb-2 small">Rp ${menu.price.toLocaleString('id-ID')}</p>
                         </div>
-                        <button class="btn btn-primary-custom text-white w-100 rounded-pill btn-sm py-1.5" style="font-size: 0.7rem; letter-spacing: -0.3px;" onclick="addToCart(${menu.id})">
-                            <i class="fas fa-shopping-basket me-1"></i> Tambahkan ke Keranjang
+                        <button class="btn btn-outline-danger w-100 rounded-pill btn-sm py-1.5" style="font-size: 0.7rem; letter-spacing: -0.3px;" onclick="addToCart(${menu.id})">
+                            <i class="fas fa-shopping-basket me-1"></i> + Keranjang
                         </button>
                     </div>
                 </div>
@@ -90,6 +84,9 @@ function updateCartUI() {
     let listMobile = document.getElementById('cart-items-list-mobile');
     let countMobile = document.getElementById('cart-count-mobile');
     let totalMobile = document.getElementById('cart-total-mobile');
+
+    // Selalu amankan isi variabel cart ke localStorage setiap kali ada perubahan
+    localStorage.setItem('savedCart', JSON.stringify(cart));
 
     if (cart.length === 0) {
         let emptyHTML = `<p class="text-muted text-center py-4 small">Keranjangmu masih kosong.</p>`;
@@ -144,13 +141,21 @@ function removeFromCart(index) {
 // =========================================================================
 function checkoutOrder() {
     if (cart.length === 0) {
-        alert('Tidak ada produk untuk di pesan');
+        alert('Tidak ada produk untuk dipesan. Silakan pilih menu terlebih dahulu!');
         return;
     }
 
-    let currentUser = localStorage.getItem('currentUser') || 'Pelanggan Anonim';
-    let orders = JSON.parse(localStorage.getItem('orders')) || [];
+    let currentUser = localStorage.getItem('currentUser');
 
+    // JIKA USER BELUM LOGIN: Amankan keranjang, beri peringatan, lalu lempar ke login.html
+    if (!currentUser || currentUser === 'Admin Kasir') {
+        alert('Anda harus login terlebih dahulu sebelum memproses pesanan!');
+        localStorage.setItem('savedCart', JSON.stringify(cart)); // Kunci data belanjaan sebelum pindah halaman
+        window.location.href = 'login.html';
+        return;
+    }
+
+    let orders = JSON.parse(localStorage.getItem('orders')) || [];
     let itemsSummary = cart.map(item => `${item.name} (${item.quantity}x)`).join(', ');
     let totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -173,17 +178,43 @@ function checkoutOrder() {
         if (bsOffcanvas) bsOffcanvas.hide();
     }
 
+    // Bersihkan keranjang setelah sukses order
     cart = [];
+    localStorage.removeItem('savedCart');
     updateCartUI();
+}
+
+// Fungsi melakukan logout pelanggan
+function logoutCustomer() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('savedCart');
+    window.location.reload();
 }
 
 // =========================================================================
 // 5. EVENT HANDLER DIMUAT SAAT HALAMAN SELESAI DIAKSES
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    let currentUser = localStorage.getItem('currentUser') || 'Pelanggan';
+    let currentUser = localStorage.getItem('currentUser');
     let userEl = document.getElementById('display-user');
-    if (userEl) userEl.innerText = currentUser;
+    let btnLogout = document.getElementById('btn-logout');
+    
+    // Tampilkan data UI keranjang bawaan lama jika tersimpan
+    updateCartUI();
+
+    if (currentUser && currentUser !== 'Admin Kasir') {
+        if (userEl) userEl.innerHTML = `Hallo <span class="fw-bold text-danger">${currentUser}</span>, Selamat datang`;
+        if (btnLogout) btnLogout.classList.remove('d-none');
+        
+        // JIKA mendeteksi instruksi kirim otomatis pasca pindah dari login.html
+        if (localStorage.getItem('triggerCheckout') === 'true') {
+            localStorage.removeItem('triggerCheckout'); // Hapus tanda eksekusi
+            checkoutOrder(); // Jalankan checkout otomatis
+        }
+    } else {
+        if (userEl) userEl.innerText = 'Selamat Datang di Kedai Mamayu';
+        if (btnLogout) btnLogout.classList.add('d-none');
+    }
     
     displayMenus();
 });
